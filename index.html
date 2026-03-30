@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<!-- <script src="https://tonejs.github.io/build/Tone.js"></script> -->
+		<script src="Tone.js"></script>
+		<script src="vs2_math.js"></script>
+		<script src="vs2_script.js"></script>
+		<script src="table.js"></script>
+		<link rel="stylesheet" href="style.css" type="text/css">
+	</head>
+	<body>
+	
+		<button id="clickprompt">click 2 enable sound</button>
+		<div id="hoverbox">
+			<canvas id="hoverboxcanvas" width=100 height=100></canvas>
+		</div>
+		
+		<h1>voicingsearcher2</h1>
+		<p>da uta ra na ma fa sha sa fla la tha ta</p>
+		<p>u o a e i</p>
+		
+		<form action="" method="get">
+			<label>sort</label>
+			<select id="sort" name="sort">
+				<option value="id">by ID</option>	
+				<option value="diss2">by 2-consonance</option>
+				<option value="diss3">by 3-consonance</option>
+				<option value="dissbell">by bell consonance</option>
+				<option value="ci">by characteristic interval</option>
+				<option value="width">by width</option>
+				<option value="random">randomize</option>
+			</select>
+			<select id="desc" name="desc">
+				<option value="0">ascending</option>
+				<option value="1">descending</option>
+			</select>
+			
+			<br>
+			
+			<label>filter</label>
+			<select id="f1type" name="f1type">
+				<option value="-">none</option>
+				<option value="edo">edo</option>
+				<option value="notes"># of notes</option>
+				<option value="diss2">2-dissonance</option>
+				<option value="diss3">3-dissonance</option>
+				<option value="dissbell">bell dissonance</option>
+				<option value="ci">characteristic interval</option>
+				<option value="mi">median interval</option>
+				<option value="width">width</option>
+				<option value="fi">first interval</option>
+				<option value="12edo">12 edo equivalent chord</option>
+			</select>
+			<select id="f11" name="f11">
+				<option value="-">---</option>
+			</select>
+			<input type="text" id="f12" name="f12">
+			
+			<br>
+			<span> ---> 
+			<input type="submit" value="search">
+			</span>
+		</form>
+		
+		<br>
+		
+		<!-- <div id="selectedchords"> -->
+			<!-- <h2>selected chords</h2> -->
+		<!-- </div> -->
+		
+		<div id="results"></div>
+		
+	</body>
+</html>

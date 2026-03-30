@@ -1,0 +1,71 @@
+body {
+	background-color: #222;
+	color: #eee;
+	font-family: monospace;
+}
+
+#filtertype {
+	margin-top: 5px;
+	margin-bottom: 5px;
+}
+
+
+td {
+	border: 1px solid #555;
+	padding: 2px;
+}
+
+tr:nth-of-type(2n) {
+	background-color: #444;
+}
+
+/* #selectedchords { */
+	/* position: absolute; */
+	/* left: calc(100vw - 400px); */
+	/* background-color: #555; */
+	/* border: 1px #888 solid; */
+	/* padding-left: 10px; */
+	/* width: 400px; */
+	/* min-height:100px; */
+/* } */
+
+
+
+.pageSelectorPage {
+	width: 3em;
+}
+
+.pageSelectorCurrentPage {
+	background-color: #e88;
+}
+
+#hoverbox {
+	/* click through */
+	/* pointer-events: none; */
+	
+	background-color: #222;
+	position: fixed;
+	top: calc( min( var(--cursor-top) + 5px, 80vh ) );
+	left: calc( var(--cursor-left) + 5px );
+	height: 20vh;
+	width: 35vh;
+	z-index: 1;
+}
+
+#hoverboxcanvas {
+	top: calc(var(--cursor-top) + 5px);
+	left: calc(var(--cursor-left) + 5px);
+	height: 20vh;
+	width: 35vh;
+	z-index: 2;
+}
+
+#clickprompt {
+	position: fixed;
+	top: 0;
+	left: 0;
+	height: 100vh;
+	width: 100vw;
+	z-index: 200;
+	background-color: #eeed;
+}
