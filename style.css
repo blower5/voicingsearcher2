@@ -4,11 +4,17 @@ body {
 	font-family: monospace;
 }
 
-#f1type {
-	margin-top: 5px;
+#sort, .filterdiv, .add-remove-filter {
 	margin-bottom: 5px;
 }
 
+.comparison-dropdown {
+	min-width: 143px;
+}
+
+.add-remove-filter {
+	min-width: 22px;
+}
 
 td {
 	border: 1px solid #555;

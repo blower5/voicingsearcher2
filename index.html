@@ -23,9 +23,9 @@
 			<label>sort</label>
 			<select id="sort" name="sort">
 				<option value="id">by ID</option>	
-				<option value="diss2">by 2-consonance</option>
-				<option value="diss3">by 3-consonance</option>
-				<option value="dissbell">by bell consonance</option>
+				<option value="d">by 2-consonance</option>
+				<option value="d3">by 3-consonance</option>
+				<option value="db">by bell consonance</option>
 				<option value="ci">by characteristic interval</option>
 				<option value="width">by width</option>
 				<option value="random">randomize</option>
@@ -36,27 +36,95 @@
 			</select>
 			
 			<br>
+			<div id="f1div" class="filterdiv">
+				<label>filter 1</label>
+				<select id="f1type" name="f1type">
+					<option value="-">none</option>
+					<option value="edo">edo</option>
+					<option value="notes"># of notes</option>
+					<option value="d">2-dissonance</option>
+					<option value="d3">3-dissonance</option>
+					<option value="db">bell dissonance</option>
+					<option value="ci">characteristic interval</option>
+					<option value="mi">median interval</option>
+					<option value="width">width</option>
+					<option value="fi">first interval</option>
+					<option value="12edo">12 edo equivalent chord</option>
+				</select>
+				<select class="comparison-dropdown" id="f11" name="f11">
+					<option value="-">-</option>
+				</select>
+				<input type="text" id="f12" name="f12" placeholder="---">
+			</div>
 			
-			<label>filter</label>
-			<select id="f1type" name="f1type">
-				<option value="-">none</option>
-				<option value="edo">edo</option>
+			<div id="f2div" class="filterdiv">
+				<label>filter 2</label>
+				<select id="f2type" name="f2type">
+					<option value="-">none</option>
+					<option value="edo">edo</option>
+					<option value="notes"># of notes</option>
+					<option value="d">2-dissonance</option>
+					<option value="d3">3-dissonance</option>
+					<option value="db">bell dissonance</option>
+					<option value="ci">characteristic interval</option>
+					<option value="mi">median interval</option>
+					<option value="width">width</option>
+					<option value="fi">first interval</option>
+					<option value="12edo">12 edo equivalent chord</option>
+				</select>
+				<select class="comparison-dropdown" id="f21" name="f21">
+					<option value="-">-</option>
+				</select>
+				<input type="text" id="f22" name="f22" placeholder="---">
+			</div>
+			
+			<div id="f3div" class="filterdiv">
+				<label>filter 3</label>
+				<select id="f3type" name="f3type">
+					<option value="-">none</option>
+					<option value="edo">edo</option>
 				<option value="notes"># of notes</option>
-				<option value="diss2">2-dissonance</option>
-				<option value="diss3">3-dissonance</option>
-				<option value="dissbell">bell dissonance</option>
-				<option value="ci">characteristic interval</option>
+					<option value="d">2-dissonance</option>
+					<option value="d3">3-dissonance</option>
+					<option value="db">bell dissonance</option>
+					<option value="ci">characteristic interval</option>
 				<option value="mi">median interval</option>
-				<option value="width">width</option>
-				<option value="fi">first interval</option>
-				<option value="12edo">12 edo equivalent chord</option>
-			</select>
-			<select id="f11" name="f11">
-				<option value="-">---</option>
-			</select>
-			<input type="text" id="f12" name="f12">
+					<option value="width">width</option>
+					<option value="fi">first interval</option>
+					<option value="12edo">12 edo equivalent chord</option>
+				</select>
+				<select class="comparison-dropdown" id="f31" name="f31">
+					<option value="-">-</option>
+				</select>
+				<input type="text" id="f32" name="f32" placeholder="---">
+			</div>
+			
+			<div id="f4div" class="filterdiv">
+				<label>filter 4</label>
+				<select id="f4type" name="f4type">
+					<option value="-">none</option>
+					<option value="edo">edo</option>
+				<option value="notes"># of notes</option>
+					<option value="d">2-dissonance</option>
+					<option value="d3">3-dissonance</option>
+					<option value="db">bell dissonance</option>
+					<option value="ci">characteristic interval</option>
+				<option value="mi">median interval</option>
+					<option value="width">width</option>
+					<option value="fi">first interval</option>
+					<option value="12edo">12 edo equivalent chord</option>
+				</select>
+				<select class="comparison-dropdown" id="f41" name="f41">
+					<option value="-">-</option>
+				</select>
+				<input type="text" id="f42" name="f42" placeholder="---">
+			</div>
+			
+			
+			<button class="add-remove-filter" id="addfilter" type="button">+</button><button class="add-remove-filter" id="removefilter" type="button">-</button>
 			
 			<br>
+
 			<span> ---> 
 			<input type="submit" value="search">
 			</span>

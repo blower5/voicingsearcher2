@@ -122,41 +122,69 @@ window.addEventListener('DOMContentLoaded', (event) => {
 		clickprompt.remove();
 	})
 	
-	hide_tooltip()
+	hide_tooltip();
 	
-	let filtertype_dropdown = document.getElementById("f1type");
-	filtertype_dropdown.addEventListener('change', filter_dropdown_handler);
-
+	document.getElementById("addfilter").addEventListener("click", add_filter);
+	document.getElementById("removefilter").addEventListener("click", remove_filter);
 
 	//---------- DOM stuff ---------------------------------------------------------------------------------------------------
-	PAGE = parseInt(new URLSearchParams(window.location.search).get('page')) - 1;
-	sortby = new URLSearchParams(window.location.search).get('sort');
-	sortdesc = parseInt(new URLSearchParams(window.location.search).get('desc'));
+	search_params = new URLSearchParams(window.location.search);
+	PAGE = parseInt(search_params.get('page')) - 1;
+	sortby = search_params.get('sort');
+	sortdesc = parseInt(search_params.get('desc'));
 	
-	filtertype = new URLSearchParams(window.location.search).get('f1type');
-	filtercomparison = new URLSearchParams(window.location.search).get('f11');
-	filtertext = new URLSearchParams(window.location.search).get('f12');
 	//defaults
 	if (!PAGE) PAGE = 0;
-	if (!sortby) sortby = "diss2";
+	if (!sortby) sortby = "d2";
 	if (!sortdesc) sortdesc = 0;
-	
-	if (!filtertype) filtertype = '-';
-	if (!filtercomparison) filtercomparison = '-';
-	if (!filtertext) filtertext = '';
 	
 	document.getElementById('sort').value = sortby;
 	document.getElementById('desc').value = sortdesc;
-	filtertype_dropdown.value = filtertype;
-	document.getElementById('f12').value = filtertext;
+	
+	//filter handling has hopefully been abstracted in a way
+	//that it will be easier to implement having an arbitrary
+	//amount later. right now it is hard coded to four 
+	//filters in the html.
+	let all_filter_divs = Array.from(document.getElementsByClassName("filterdiv"));
+	let filter_params = [];
+	for (let i in all_filter_divs) {
+		
+		//why is i a string??? i should not be a string.
+		i = parseInt(i);
+		
+		//get filter parameters from url
+		//these start at f1type, f11, f12, f2type...
+		filtertype       =  search_params.get('f'+ (i+1) +'type');
+		filtercomparison =  search_params.get('f'+ (i+1) +'1');
+		filtertext       =  search_params.get('f'+ (i+1) +'2');
+		
+		//console.log( "filter " + (i+1) + " settings: " + filtertype + " " + filtercomparison + " " + filtertext );
+		
+		//defaults
+		if (!filtertype) filtertype = '-';
+		if (!filtercomparison) filtercomparison = '-';
+		if (!filtertext) filtertext = '';
+		
+		//add filter params to a 2d list to be used later
+		filter_params.push( [filtertype, filtercomparison, filtertext] );
+		
+		//first, update filter type dropdown.
+		all_filter_divs[i].children[1].value = filtertype;
+		
+		//after filter type is updated, update the comparsion dropdown, and add a handler to 
+		//do it automatically later, when the filter type changes.
+		filter_dropdown_update( all_filter_divs[i] );
+		all_filter_divs[i].children[1].addEventListener('change', filter_dropdown_callback);
+		
+		//now that the comparison dropdown has the correct options, update all the filter fields.
+		all_filter_divs[i].children[2].value = filtercomparison;
+		all_filter_divs[i].children[3].value = filtertext;
+	}
 	//------------------------------------------------------------------------------------------------------------------------
 	
-	//update filter dropdown, update dropdowns to match url
-	filter_dropdown_handler();
-	document.getElementById('f11').value = filtercomparison;
+	hide_empty_filters();
 	
-	
-	search_voicing_table(sortby,sortdesc);
+	search_voicing_table(sortby,sortdesc,filter_params);
 	
 	create_paged_results(PAGE);
 	
@@ -164,13 +192,18 @@ window.addEventListener('DOMContentLoaded', (event) => {
 
 
 //the filters need different options in the dropdowns depending
-//on what kind of filter it is. this function replaces the options
-//when the filtertype changes
- 
-function filter_dropdown_handler(event) {
-	let filtertype_dropdown = document.getElementById("f1type");
-	let filter_comparison_dropdown = document.getElementById("f11");
-	let filter_text_field = document.getElementById("f12");
+//on what kind of filter it is. these functions replace the options
+//when the filtertype changes. the first is a callback
+
+function filter_dropdown_callback(event) {
+	let filter_div = this.parentElement;
+	filter_dropdown_update(filter_div);
+}
+
+function filter_dropdown_update(filter_div) {
+	let filtertype_dropdown = filter_div.children[1];
+	let filter_comparison_dropdown = filter_div.children[2];
+	let filter_text_field = filter_div.children[3];
 
 	let comparison_options = [];
 
@@ -184,9 +217,9 @@ function filter_dropdown_handler(event) {
 			break;
 		
 		case "edo":
-		case "diss2":
-		case "diss3":
-		case "dissbell":
+		case "d":
+		case "d3":
+		case "db":
 		case "notes":
 			//numbers handler
 			comparison_options = [ ["less than","n-lt"], ["less than or equal","n-lte"], ["equals","n-eq"], ["more than","n-mt"], ["more than or equal","n-mte"] ];
@@ -213,13 +246,10 @@ function filter_dropdown_handler(event) {
 		filter_comparison_dropdown.options.remove(0);
 	}
 	
-	for (i of comparison_options) {
+	for (let i of comparison_options) {
 		filter_comparison_dropdown.options.add( new Option(i[0], i[1]) );
 	}
 }
-
-
-
 
 
 
@@ -238,14 +268,13 @@ function filter_dropdown_handler(event) {
 
 
 
-//the filtertypes names dont match the names of the voicing objects' keys
-//I did this to save space in the url. was it worth it?
+//the filtertypes names dont necessarily match the names of the voicing objects' keys
 //this is the lookup table / dictionary to convert filter type to voicing key name
 const FILTERTYPE_LOOKUP = {
 	'edo':'edo',
-	'diss2':'d',
-	'diss3':'d3',
-	'dissbell':'db',
+	'd':'d',
+	'd3':'d3',
+	'db':'db',
 	'notes':'notes',
 	'ci':'ci',
 	'mi':'mi',
@@ -254,75 +283,78 @@ const FILTERTYPE_LOOKUP = {
 	'12edo':'r12s_name'
 };
 
-
-function search_voicing_table(sortby,descending) {
+function search_voicing_table(sortby,descending,filter_params) {
 	
 	//create filtered subset of table then sort
 	console.log("filtering...");
 	
-	//retrieve the filter form values
-	let filtertype_dropdown = document.getElementById("f1type");
-	let filter_comparison_dropdown = document.getElementById("f11");
-	let filter_text_field = document.getElementById("f12");
+	var voicing_table_filtered = VOICING_TABLE;
 	
-	if (filtertype_dropdown.value == '-') {
-		var voicing_table_filtered = VOICING_TABLE;
-	} else {
-		key_to_compare = FILTERTYPE_LOOKUP[filtertype_dropdown.value];
-		convert_to_number = false;
-		
-		//functions return truthy to keep that voicing in the set.
-		switch (filter_comparison_dropdown.value) {
-			//number operations
-			case 'n-lt':
-				filterfunc = (a,b)=>{return a < b};
-				convert_to_number = true;
-				break;
-			case 'n-lte':
-				filterfunc = (a,b)=>{return a <= b};
-				convert_to_number = true;
-				break;
-			case 'n-eq':
-				filterfunc = (a,b)=>{return a == b};
-				convert_to_number = true;
-				break;
-			case 'n-mt':
-				filterfunc = (a,b)=>{return a > b};
-				convert_to_number = true;
-				break;
-			case 'n-mte':
-				filterfunc = (a,b)=>{return a >= b};
-				convert_to_number = true;
-				break;
-			//solfege operations
-			case 's-lt':
-				filterfunc = (a,b)=>{return a < name_to_note(b,true) };
-				break;
-			case 's-eq':
-				//converting to note and back fixes an edge case
-				//where you filter for solfege equal to e.g. "da"
-				//and the filter is supposed to fill in the octave for you
-				filterfunc = (a,b)=>{return note_to_name(a+24) == note_to_name(name_to_note(b)) };
-				break;
-			case 's-mt':
-				filterfunc = (a,b)=>{return a > name_to_note(b,true) };
-				break;
-			case 's-c':
-				//search returns -1 when no match is found, so add one
-				//to make it falsy
-				filterfunc = (a,b)=>{return note_to_name(a+24).search(b)+1};
-				break;
-			case 't-c': //text operation
-				filterfunc = (a,b)=>{return a.search(b)+1};
-				break;
-			case 't-ie': //text operation
-				filterfunc = (a,b)=>{return a == b};
-				break;
-		}
+	//filter, for every filter available
+	for (let i of filter_params) {
+		let filtertype_dropdown = i[0];
+		let filter_comparison_dropdown = i[1];
+		let filter_text_field = i[2];
+	
+		if (filtertype_dropdown != '-') {
+			key_to_compare = FILTERTYPE_LOOKUP[filtertype_dropdown];
+			convert_to_number = false;
+			
+			//functions return truthy to keep that voicing in the set.
+			//A is the value of the voicings key_to_compare
+			//B is what has been typed in the filter textfield
+			switch (filter_comparison_dropdown) {
+				//number operations
+				case 'n-lt':
+					filterfunc = (a,b)=>{return a < b};
+					convert_to_number = true;
+					break;
+				case 'n-lte':
+					filterfunc = (a,b)=>{return a <= b};
+					convert_to_number = true;
+					break;
+				case 'n-eq':
+					filterfunc = (a,b)=>{return a == b};
+					convert_to_number = true;
+					break;
+				case 'n-mt':
+					filterfunc = (a,b)=>{return a > b};
+					convert_to_number = true;
+					break;
+				case 'n-mte':
+					filterfunc = (a,b)=>{return a >= b};
+					convert_to_number = true;
+					break;
+				//solfege operations
+				case 's-lt':
+					filterfunc = (a,b)=>{return a < name_to_note(b,true) };
+					break;
+				case 's-eq':
+					//converting to note and back fixes an edge case
+					//where you filter for solfege equal to e.g. "da" (with no octave number)
+					//and the filter is supposed to fill in the octave for you
+					filterfunc = (a,b)=>{return note_to_name(a+24) == note_to_name(name_to_note(b)) };
+					break;
+				case 's-mt':
+					filterfunc = (a,b)=>{return a > name_to_note(b,true) };
+					break;
+				case 's-c':
+					//search returns -1 when no match is found, so add one
+					//to make it falsy
+					filterfunc = (a,b)=>{return note_to_name(a+24).search(b)+1};
+					break;
+				case 't-c': //text operation
+					filterfunc = (a,b)=>{return a.search(b)+1};
+					break;
+				case 't-ie': //text operation
+					filterfunc = (a,b)=>{return a == b};
+					break;
+			}
 
-		//copy table and filter it
-		//if (convert_to_number) filter_text_field = filter_text_field
-		var voicing_table_filtered = VOICING_TABLE.filter( voicing=>(   filterfunc( voicing[key_to_compare], filter_text_field.value)   ) );
+			if (convert_to_number) filter_text_field = parseFloat(filter_text_field);
+			//copy table and filter it
+			var voicing_table_filtered = voicing_table_filtered.filter( voicing=>(   filterfunc( voicing[key_to_compare], filter_text_field)   ) );
+		}
 	}
 	
 	console.log("filtering done. sorting...");
@@ -338,16 +370,16 @@ function search_voicing_table(sortby,descending) {
 			};
 			break;
 			
-		case "diss2":
+		case "d":
 		default:
 			sortfunc = (a,b)=>{return a.d - b.d};
 			break;
 			
-		case "diss3":
+		case "d3":
 			sortfunc = (a,b)=>{return a.d3 - b.d3};
 			break;
 			
-		case "dissbell":
+		case "db":
 			sortfunc = (a,b)=>{return a.db - b.db};
 			break;
 			
@@ -538,7 +570,7 @@ function create_page_selector(current_page){
 	
 	//example page 1... 5,6,7,8,9,10,11... page 86
 	
-	for (i of pages) {
+	for (let i of pages) {
 		page_button = document.createElement('button');
 		page_button.textContent = i;
 		page_button.addEventListener("click", x => {
@@ -552,6 +584,55 @@ function create_page_selector(current_page){
 	}
 	
 	return page_selector;
+}
+
+
+
+
+
+//hiding and unhiding the filters
+
+//make sure dropdowns are set from the url params before calling this
+//go backwards from the end and hide until the filter isn't empty
+function hide_empty_filters() {
+	let all_filter_divs = Array.from(document.getElementsByClassName("filterdiv"));
+	for (let i = all_filter_divs.length - 1; i >= 1; i--) {
+		if (all_filter_divs[i].children[1].value != "-") {
+			break;
+		}
+		all_filter_divs[i].hidden = true;
+	}
+}
+
+function add_filter(event) {
+	let all_filter_divs = Array.from(document.getElementsByClassName("filterdiv"));
+	let first_hidden_filter = -1;
+	for (let i in all_filter_divs) {
+		if (all_filter_divs[i].hidden) {
+			first_hidden_filter = i;
+			break;
+		}
+	}
+	if (first_hidden_filter == -1) {
+		return;
+	}
+	all_filter_divs[first_hidden_filter].hidden = false;
+}
+
+function remove_filter(event) {
+	let all_filter_divs = Array.from(document.getElementsByClassName("filterdiv"));
+	let last_visible_filter = 0;
+	for (let i = all_filter_divs.length - 1; i >= 1; i--) {
+		if (all_filter_divs[i].hidden == false) {
+			last_visible_filter = i;
+			break;
+		}
+	}
+	//I use 0 instead of -1 here because it should never hide the first filter.
+	if (last_visible_filter == 0) {
+		return;
+	}
+	all_filter_divs[last_visible_filter].hidden = true;
 }
 
 
