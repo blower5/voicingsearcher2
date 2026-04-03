@@ -11,7 +11,7 @@ const NOTE_OFFSET = 60; //don't play voicings at C-2, play them at C3
 const VOICING_BASS_INTERVAL_WIDTH = 1;
 
 var EDO = 12;
-var EDOS_TO_GENERATE = [7,11,12,13,14,15,16,17,18,19,20,21,22,23,24,31];
+var EDOS_TO_GENERATE = [7,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31];
 //var EDOS_TO_GENERATE = [12,19];
 
 var VOICING_MAX_WIDTH = 24;
@@ -352,6 +352,49 @@ function id_to_freqs(id) {
 }
 
 
+function array_is_equal(a, b) {
+	if (a === b) return true;
+	if (a == null || b == null) return false;
+	if (a.length !== b.length) return false;
+
+	let a2 = Array.from(a).sort() //don't mutate a and b!
+	let b2 = Array.from(b).sort()
+
+	for (var i = 0; i < a2.length; ++i) {		
+		if (a2[i] !== b2[i]) return false;
+	}
+	return true;
+}
+
+//intervals are all the same
+function voicing_delta_is_equal( vd ) {
+	for (let i in vd) {
+		if (vd[i] != vd[0]) return false;
+	}
+	return true;
+}
+
+//intervals only get smaller
+function voicing_delta_is_pyramid( vd ) {
+	let a = vd[0]
+	for (let i in vd) {
+		if (vd[i] > a) return false;
+		if (vd[i] < a) a = vd[i];
+	}
+	return true;
+}
+
+//intervals only get bigger
+function voicing_delta_is_inv_pyramid( vd ) {
+	let a = vd[0]
+	for (let i in vd) {
+		if (vd[i] < a) return false;
+		if (vd[i] > a) a = vd[i];
+	}
+	return true;
+}
+
+
 //set theory stuff, uses arrays of notes
 
 function remove_duplicates(A) {
@@ -437,8 +480,17 @@ for (let j of EDOS_TO_GENERATE) {
 	VOICING_TABLE_THIS_EDO = [];
 	
 	for (let i in allvoicings) {
+		//generate statistics for voicings here. remember: the database needs to be
+		//under 100MB. the less letters you use for a key (e.g. ".voicing") the smaller
+		//the json file ends up. do not save something into the database if it is only
+		//used as an intermediate. arrays of floats are giant!!!
+		
+		//it turns out the array of midi notes and array of freqencies of notes aren't
+		//actually referenced ever. I was able to stop saving the .voicing value as
+		//well just by calculating it from the ID whenever it was needed.
+
 		VOICING_TABLE_THIS_EDO[i] = {};
-		VOICING_TABLE_THIS_EDO[i].voicing = allvoicings[i];
+		//VOICING_TABLE_THIS_EDO[i].voicing = allvoicings[i];
 		VOICING_TABLE_THIS_EDO[i].notes = allvoicings[i].length;
 		
 		
@@ -446,27 +498,32 @@ for (let j of EDOS_TO_GENERATE) {
 		VOICING_TABLE_THIS_EDO[i].id = voicing_to_id(allvoicings[i]);
 		
 		//convert each scale degree to midi
-		voicing_midi = allvoicings[i].map(x => scale_degree_to_midi(x,EDO));
+		let voicing_midi = allvoicings[i].map(x => scale_degree_to_midi(x,EDO));
 		//VOICING_TABLE_THIS_EDO[i].voicing_midi = voicing_midi;
 		
 		//width is equal to the highest note (since the lowest note is always 0)
-		
-		VOICING_TABLE_THIS_EDO[i].width = allvoicings[i].slice(-1)[0];
-		VOICING_TABLE_THIS_EDO[i].width_notes = ( scale_degree_to_midi(VOICING_TABLE_THIS_EDO[i].width,EDO) - NOTE_OFFSET );
-		VOICING_TABLE_THIS_EDO[i].width_notes_r = note_to_name( VOICING_TABLE_THIS_EDO[i].width_notes + 24, true );
+		VOICING_TABLE_THIS_EDO[i].w = allvoicings[i].slice(-1)[0];
+		VOICING_TABLE_THIS_EDO[i].w_notes = ( scale_degree_to_midi(VOICING_TABLE_THIS_EDO[i].w,EDO) - NOTE_OFFSET );
+		VOICING_TABLE_THIS_EDO[i].w_notes_r = note_to_name( VOICING_TABLE_THIS_EDO[i].w_notes + 24, true );
 		
 		//first interval
 		VOICING_TABLE_THIS_EDO[i].fi = allvoicings[i].slice(1,2)[0];
-		VOICING_TABLE_THIS_EDO[i].fi_notes = ( scale_degree_to_midi(VOICING_TABLE_THIS_EDO[i].firstinterval,EDO) - NOTE_OFFSET );
+		VOICING_TABLE_THIS_EDO[i].fi_notes = ( scale_degree_to_midi(VOICING_TABLE_THIS_EDO[i].fi,EDO) - NOTE_OFFSET );
 		
 		//"rounded 12edo set"
 		VOICING_TABLE_THIS_EDO[i].r12s = notes_to_reduced_set(voicing_midi.map( n => Math.round( n - NOTE_OFFSET ) ));
-		VOICING_TABLE_THIS_EDO[i].r12s_name = find_name_of_reduced_set( VOICING_TABLE_THIS_EDO[i].r12s );
+		let r12s_name = find_name_of_reduced_set( VOICING_TABLE_THIS_EDO[i].r12s );
 		
-		//error is how far away the rounding moved the note
-		let total_error = voicing_midi.map( n => Math.abs( (n - NOTE_OFFSET) - Math.round( n - NOTE_OFFSET ) ) ).reduce((a,b)=>a+b);
-		let confidence = 100 - (200 * total_error / VOICING_TABLE_THIS_EDO[i].voicing.length);
-		VOICING_TABLE_THIS_EDO[i].r12s_conf = confidence;
+		//only add to r12s name and confidence to database if exists.
+		//confidence: rounded all the notes and nothing changed: 100 confidence
+		//			  rounded all the notes and all of them changed by 50 cents: 0 confidence
+		if (r12s_name) {
+			VOICING_TABLE_THIS_EDO[i].r12s_name = r12s_name;
+			//error is how far away the rounding moved the note
+			let total_error = voicing_midi.map( n => Math.abs( (n - NOTE_OFFSET) - Math.round( n - NOTE_OFFSET ) ) ).reduce((a,b)=>a+b);
+			let confidence = 100 - (200 * total_error / allvoicings[i].length);
+			VOICING_TABLE_THIS_EDO[i].r12s_conf = confidence;
+		}
 		
 		//convert each midi note to freq
 		voicing_freq = voicing_midi.map(note_to_freq);
@@ -485,6 +542,47 @@ for (let j of EDOS_TO_GENERATE) {
 		VOICING_TABLE_THIS_EDO[i].ci_r = note_to_name( VOICING_TABLE_THIS_EDO[i].ci + 24, true );
 		VOICING_TABLE_THIS_EDO[i].mi = calc_median_interval(voicing_freq);
 		VOICING_TABLE_THIS_EDO[i].mi_r = note_to_name( VOICING_TABLE_THIS_EDO[i].mi + 24, true );
+		
+		
+		//finally, calculate "attributes": these pop up when hovering over voicings. 
+		//they are stored as single characters in a string to save space.
+		//if a voicing is 2 notes it's stupid to call it a mirror chord or "equi-
+		//distant" or whatever so don't even bother.
+		if (allvoicings[i].length > 2) {
+			let attributes = "";
+			
+			//voicing delta is distance between each note. this array is one less in length than the voicing.
+			let voicing_delta = [];
+			for (let j = 1; j<allvoicings[i].length; j++) {
+				voicing_delta.push(allvoicings[i][j] - allvoicings[i][j-1]);
+			}
+			
+			if ( voicing_delta_is_equal(voicing_delta) ) {
+				attributes += "me";
+			} else {
+				//does a voicing equal itself flipped upside down? if yes give it "m" mirror attribute.
+				//equally spaced means its also a mirror chord hence its placement here. a lot of these
+				//attributes are mutually exclusive
+				if ( array_is_equal( allvoicings[i], allvoicings[i].map( n=>VOICING_TABLE_THIS_EDO[i].w-n ).sort( (a,b)=>a>b ) ) ) {
+					attributes += "m";
+				} else {
+					//pyramids and inverted pyramids only are interesting attributes if
+					//the chord has 4 or more notes, in my opinion. since every chord
+					//with 3 notes is one or the other. gratuitous else if for speeeed.
+					if (allvoicings[i].length > 3) {
+						if (voicing_delta_is_pyramid(voicing_delta)) {
+							attributes += "p";
+						} else {
+							if (voicing_delta_is_inv_pyramid(voicing_delta)) attributes += "i";
+						}
+					}
+				}
+			}
+			
+			if (attributes) VOICING_TABLE_THIS_EDO[i].a = attributes;
+		}
+		
+		
 	}
 	VOICING_TABLE = VOICING_TABLE.concat(VOICING_TABLE_THIS_EDO);
 }

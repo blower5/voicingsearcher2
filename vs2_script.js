@@ -228,7 +228,7 @@ function filter_dropdown_update(filter_div) {
 			
 		case "ci":
 		case "mi":
-		case "width":
+		case "w":
 		case "fi":
 			//solfege handler
 			comparison_options = [ ["less than","s-lt"], ["equals","s-eq"], ["more than","s-mt"], ["contains the text","s-c"] ];
@@ -254,18 +254,6 @@ function filter_dropdown_update(filter_div) {
 
 
 
-// function load_voicing_table_http() {
-	// let voicingtablereq = new XMLHttpRequest();
-	// voicingtablereq.addEventListener('load', (event) => {
-		// VOICING_TABLE = voicingtablereq.response;
-		// console.log("recieved json");
-		// console.log(voicingtablereq.response);
-	// });
-	// voicingtablereq.open('GET', 'table.json');
-	// voicingtablereq.responseType = 'json';
-	// voicingtablereq.send();
-// }
-
 
 
 //the filtertypes names dont necessarily match the names of the voicing objects' keys
@@ -278,7 +266,7 @@ const FILTERTYPE_LOOKUP = {
 	'notes':'notes',
 	'ci':'ci',
 	'mi':'mi',
-	'width':'width_notes',
+	'w':'w_notes',
 	'fi':'fi_notes',
 	'12edo':'r12s_name'
 };
@@ -387,8 +375,8 @@ function search_voicing_table(sortby,descending,filter_params) {
 			sortfunc = (a,b)=>{return a.ci - b.ci};
 			break;
 		
-		case "width":
-			sortfunc = (a,b)=>{return a.width_notes - b.width_notes};
+		case "w":
+			sortfunc = (a,b)=>{return a.w_notes - b.w_notes};
 			break;
 			
 		case "random":
@@ -440,6 +428,7 @@ function create_paged_results(page) {
 		["CI"			,"characteristic interval"],
 		["MI"			,"median interval"],
 		["width"		,"how big is this voicing"],
+		["att."			,"attributes of this chord. hover over to see full names"],
 		["12edo equiv."	,"best guess as to what chord this sounds like in 12 edo"],
 		["confidence"	,"how close is this voicing to the named chord"]]
 	
@@ -453,24 +442,24 @@ function create_paged_results(page) {
 	
 	
 	for (let i in RESULTS_TABLE[page]) {
+		
 		let tr = document.createElement('tr');
 		
-		// [tdid, tdv, tdvreadable, tdvdissonance, tdbutton, tdvdissonance3, tdbutton3, tdvdissonancebell, tdbuttonbell, tdcharinter] = new Array(10).map();
-		
-		let tdid = document.createElement('td');
-		let tdv = document.createElement('td');
-		let tdvreadable = document.createElement('td');
-		let tdvdissonance = document.createElement('td');
-		let tdbutton = document.createElement('td');
-		let tdvdissonance3 = document.createElement('td');
-		let tdbutton3 = document.createElement('td');
+		let tdid 			= document.createElement('td');
+		let tdv 			= document.createElement('td');
+		let tdvreadable		= document.createElement('td');
+		let tdvdissonance 	= document.createElement('td');
+		let tdbutton 		= document.createElement('td');
+		let tdvdissonance3 	= document.createElement('td');
+		let tdbutton3 		= document.createElement('td');
 		let tdvdissonancebell = document.createElement('td');
-		let tdbuttonbell = document.createElement('td');
-		let tdcharinter = document.createElement('td');
-		let tdmedianinter = document.createElement('td');
-		let tdwidth = document.createElement('td');
-		let td12edoeq = document.createElement('td');
-		let td12edoerror = document.createElement('td');
+		let tdbuttonbell 	= document.createElement('td');
+		let tdcharinter 	= document.createElement('td');
+		let tdmedianinter 	= document.createElement('td');
+		let tdwidth			= document.createElement('td');
+		let tdatt 			= document.createElement('td');
+		let td12edoeq 		= document.createElement('td');
+		let td12edoerror 	= document.createElement('td');
 		
 		let hearbutton = document.createElement('button');
 		hearbutton.voicing_id = RESULTS_TABLE[page][i].id;
@@ -488,7 +477,7 @@ function create_paged_results(page) {
 		hearbuttonbell.textContent = "hear";
 		
 		tdid.textContent = RESULTS_TABLE[page][i].id;
-		tdv.textContent = RESULTS_TABLE[page][i].edo + ": " + RESULTS_TABLE[page][i].voicing;
+		tdv.textContent = RESULTS_TABLE[page][i].edo + ": " + id_to_voicing(RESULTS_TABLE[page][i].id)[1];
 		tdvreadable.textContent = RESULTS_TABLE[page][i].voicing_r;
 		
 		tdvdissonance.textContent = RESULTS_TABLE[page][i].d.toFixed(3);
@@ -502,7 +491,8 @@ function create_paged_results(page) {
 		
 		tdcharinter.textContent = RESULTS_TABLE[page][i].ci_r;
 		tdmedianinter.textContent = RESULTS_TABLE[page][i].mi_r;
-		tdwidth.textContent = RESULTS_TABLE[page][i].width_notes_r;
+		tdwidth.textContent = RESULTS_TABLE[page][i].w_notes_r;
+		tdatt.textContent = RESULTS_TABLE[page][i].a;
 		
 		td12edoeq.textContent = RESULTS_TABLE[page][i].r12s_name;
 		if (td12edoeq.textContent != "") td12edoerror.textContent = RESULTS_TABLE[page][i].r12s_conf.toFixed(2);
@@ -525,20 +515,23 @@ function create_paged_results(page) {
 			hide_tooltip();
 		});
 		
-		tr.appendChild(tdid);
-		tr.appendChild(tdv);
-		tr.appendChild(tdvreadable);
-		tr.appendChild(tdvdissonance);
-		tr.appendChild(tdbutton);
-		tr.appendChild(tdvdissonance3);
-		tr.appendChild(tdbutton3);
-		tr.appendChild(tdvdissonancebell);
-		tr.appendChild(tdbuttonbell);
-		tr.appendChild(tdcharinter);
-		tr.appendChild(tdmedianinter);
-		tr.appendChild(tdwidth);
-		tr.appendChild(td12edoeq);
-		tr.appendChild(td12edoerror);
+		[
+			tdid,
+			tdv,
+			tdvreadable,
+			tdvdissonance,
+			tdbutton,
+			tdvdissonance3,
+			tdbutton3,
+			tdvdissonancebell,
+			tdbuttonbell,
+			tdcharinter,
+			tdmedianinter,
+			tdwidth,
+			tdatt,
+			td12edoeq,
+			td12edoerror
+		].forEach( td => tr.appendChild(td) );
 		
 		table.appendChild(tr);
 	}
@@ -604,6 +597,7 @@ function hide_empty_filters() {
 	}
 }
 
+//go forwards until you hit an invisible filter, show
 function add_filter(event) {
 	let all_filter_divs = Array.from(document.getElementsByClassName("filterdiv"));
 	let first_hidden_filter = -1;
@@ -619,6 +613,8 @@ function add_filter(event) {
 	all_filter_divs[first_hidden_filter].hidden = false;
 }
 
+//go backwards until you hit a visible filter, hide
+//also, clear the newly hidden filters data.
 function remove_filter(event) {
 	let all_filter_divs = Array.from(document.getElementsByClassName("filterdiv"));
 	let last_visible_filter = 0;
@@ -633,6 +629,8 @@ function remove_filter(event) {
 		return;
 	}
 	all_filter_divs[last_visible_filter].hidden = true;
+	all_filter_divs[last_visible_filter].children[1].value = "-"; //set type dropdown to none
+	filter_dropdown_update(all_filter_divs[last_visible_filter]); //update other values (clear them)
 }
 
 
@@ -646,6 +644,14 @@ document.addEventListener('mousemove', e => {
 	document.documentElement.style.cssText = "--cursor-left: " + e.clientX + "px; --cursor-top: " + e.clientY + "px;" 
 	
 });
+
+const ATTRIBUTE_LOOKUP = {
+	"m":["mirror"  			,"#dd9"],
+	"e":["equal"   			,"#494"],
+	"p":["pyramid" 			,"#9cc"],
+	"i":["inverted pyramid" ,"#c99"]
+};
+
 
 //canvas handling for tooltip / mouseover box
 function show_tooltip(voicing_id) {
@@ -674,12 +680,12 @@ function show_tooltip(voicing_id) {
 	
 	//draw the voicing as piano roll
 	//vertical grid is smallest amount of octaves this voicing fits into, in notes
-	let voicing_edo = voicing.edo;
-	let least_octaves = voicing_edo * Math.ceil(voicing.width/voicing_edo);
+	let [voicing_edo,voicing_notes] = id_to_voicing(voicing.id);
+	let least_octaves = voicing_edo * Math.ceil(voicing.w/voicing_edo);
 	
 	for (let i = 0; i <= least_octaves; i++) {
 		ctx.fillStyle = '#444';
-		if (voicing.voicing.indexOf(i) != -1) ctx.fillStyle = '#f44';
+		if (voicing_notes.indexOf(i) != -1) ctx.fillStyle = '#f44';
 		ctx.fillRect(0, height - height/(least_octaves+1)*(i+1), height, height/(least_octaves+1)*0.9  );
 	}
 	
@@ -712,7 +718,25 @@ function show_tooltip(voicing_id) {
 		
 	}
 	//box outline
+	ctx.strokeStyle = '#666f';
+	ctx.strokeRect(0,0,height + 24.5,height);
+	ctx.strokeStyle = '#888f';
 	ctx.strokeRect(0,0,width,height);
+	
+	//draw attribute text on the right
+	if (voicing.a) {
+		ctx.fillStyle = '#eeea';
+		ctx.fillText("attributes:", height + 30, 15);
+		let attributes = voicing.a.split('');
+		for (i in attributes) {
+			ctx.fillStyle = ATTRIBUTE_LOOKUP[attributes[i]][1];
+			ctx.fillText(ATTRIBUTE_LOOKUP[attributes[i]][0], height + 40, 30 + 15*i);
+		}
+	}
+	
+	ctx.fillStyle = '#aaaa';
+	if (voicing.r12s_name) ctx.fillText(voicing.r12s_name, height + 30, height - 20);
+	ctx.fillText(voicing.id, height + 30, height - 5);
 	
 	//debug text
 	// ctx.font = "14px sans-serif";

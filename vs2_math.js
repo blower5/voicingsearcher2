@@ -227,6 +227,51 @@ function id_to_freqs(id) {
 }
 
 
+function array_is_equal(a, b) {
+	if (a === b) return true;
+	if (a == null || b == null) return false;
+	if (a.length !== b.length) return false;
+
+	let a2 = Array.from(a).sort() //don't mutate a and b!
+	let b2 = Array.from(b).sort()
+
+	for (var i = 0; i < a2.length; ++i) {		
+		if (a2[i] !== b2[i]) return false;
+	}
+	return true;
+}
+
+//intervals are all the same
+function voicing_delta_is_equal( vd ) {
+	for (let i in vd) {
+		if (vd[i] != vd[0]) return false;
+	}
+	return true;
+}
+
+//intervals only get smaller
+function voicing_delta_is_pyramid( vd ) {
+	let a = vd[0]
+	for (let i in vd) {
+		if (vd[i] > a) return false;
+		if (vd[i] < a) a = vd[i];
+	}
+	return true;
+}
+
+//intervals only get bigger
+function voicing_delta_is_inv_pyramid( vd ) {
+	let a = vd[0]
+	for (let i in vd) {
+		if (vd[i] < a) return false;
+		if (vd[i] > a) a = vd[i];
+	}
+	return true;
+}
+
+
+
+
 //set theory stuff, uses arrays of notes
 
 function remove_duplicates(A) {
