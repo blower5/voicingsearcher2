@@ -15,7 +15,8 @@ function note_to_name(midinote,showoctave=true) {
 //this currently breaks when NOTE_OFFSET is changed!
 function name_to_note(solfege, is_interval) {
 	regex = /(d|ut|r|n|m|f|sh|s|fl|l|th|t)(u|o|a|e|i)(\d)?/;
-	regexmatches = solfege.match(regex);
+	
+	regexmatches = solfege.toLowerCase().match(regex);
 	//regexmatches[0] is the original string, [1] is the consonant, [2] is the vowel, and [3] is the octave if it exists
 	
 	notelist = ["d","ut","r","n","m","f","sh","s","fl","l","th","t"];

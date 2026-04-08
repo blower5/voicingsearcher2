@@ -236,9 +236,10 @@ function filter_dropdown_update(filter_div) {
 			break;
 			
 		case "12edo":
-			//text handler
+		case "a":
+			//text handler (for 12edo equivalent chord and attributes)
 			comparison_options = [ ["contains the text","t-c"], ["is exactly","t-ie"] ];
-			filter_text_field.placeholder = "a chord";
+			filter_text_field.placeholder = "text";
 			break;
 	}
 	
@@ -268,6 +269,7 @@ const FILTERTYPE_LOOKUP = {
 	'mi':'mi',
 	'w':'w_notes',
 	'fi':'fi_notes',
+	'a':'a',
 	'12edo':'r12s_name'
 };
 
@@ -331,15 +333,26 @@ function search_voicing_table(sortby,descending,filter_params) {
 					//to make it falsy
 					filterfunc = (a,b)=>{return note_to_name(a+24).search(b)+1};
 					break;
+					
+				//to save space, keys with empty values aren't added to the database
+				//this means we need to handle undefined values for r12s and attributes
+			
 				case 't-c': //text operation
-					filterfunc = (a,b)=>{return a.search(b)+1};
+					filterfunc = (a,b)=>{
+						if (a == undefined) return 0;
+						return a.search(b)+1;
+					};
 					break;
 				case 't-ie': //text operation
-					filterfunc = (a,b)=>{return a == b};
+					filterfunc = (a,b)=>{
+						if (a == undefined) return 0;
+						return a == b;
+					};
 					break;
 			}
 
 			if (convert_to_number) filter_text_field = parseFloat(filter_text_field);
+			
 			//copy table and filter it
 			var voicing_table_filtered = voicing_table_filtered.filter( voicing=>(   filterfunc( voicing[key_to_compare], filter_text_field)   ) );
 		}
@@ -379,6 +392,10 @@ function search_voicing_table(sortby,descending,filter_params) {
 			sortfunc = (a,b)=>{return a.w_notes - b.w_notes};
 			break;
 			
+		case "12edo":
+			sortfunc = (a,b)=>{return a.r12s_conf - b.r12s_conf};
+			break;
+			
 		case "random":
 			sortfunc = (a,b)=>{return Math.random() - .5};
 			break;
@@ -411,7 +428,9 @@ function create_paged_results(page) {
 	
 	table = document.createElement('table');
 	
-	//TODO turn on / off columns?
+	//TODO is there a better way of making a lot of td ?
+	//TODO maybe turn on / off columns?
+	
 	
 	//list of header cells and their title text (hover text)
 	let trhead = document.createElement('tr');
@@ -445,21 +464,21 @@ function create_paged_results(page) {
 		
 		let tr = document.createElement('tr');
 		
-		let tdid 			= document.createElement('td');
-		let tdv 			= document.createElement('td');
-		let tdvreadable		= document.createElement('td');
-		let tdvdissonance 	= document.createElement('td');
-		let tdbutton 		= document.createElement('td');
-		let tdvdissonance3 	= document.createElement('td');
-		let tdbutton3 		= document.createElement('td');
-		let tdvdissonancebell = document.createElement('td');
-		let tdbuttonbell 	= document.createElement('td');
-		let tdcharinter 	= document.createElement('td');
-		let tdmedianinter 	= document.createElement('td');
-		let tdwidth			= document.createElement('td');
-		let tdatt 			= document.createElement('td');
-		let td12edoeq 		= document.createElement('td');
-		let td12edoerror 	= document.createElement('td');
+		let tdid 				= document.createElement('td');
+		let tdv 				= document.createElement('td');
+		let tdvreadable			= document.createElement('td');
+		let tdvdissonance 		= document.createElement('td');
+		let tdbutton 			= document.createElement('td');
+		let tdvdissonance3 		= document.createElement('td');
+		let tdbutton3 			= document.createElement('td');
+		let tdvdissonancebell   = document.createElement('td');
+		let tdbuttonbell 		= document.createElement('td');
+		let tdcharinter 		= document.createElement('td');
+		let tdmedianinter 		= document.createElement('td');
+		let tdwidth				= document.createElement('td');
+		let tdatt 				= document.createElement('td');
+		let td12edoeq 			= document.createElement('td');
+		let td12edoerror 		= document.createElement('td');
 		
 		let hearbutton = document.createElement('button');
 		hearbutton.voicing_id = RESULTS_TABLE[page][i].id;
@@ -645,13 +664,14 @@ document.addEventListener('mousemove', e => {
 	
 });
 
+//lookup object for attribute letter to full name and color
+//used in the tooltip
 const ATTRIBUTE_LOOKUP = {
 	"m":["mirror"  			,"#dd9"],
 	"e":["equal"   			,"#494"],
 	"p":["pyramid" 			,"#9cc"],
 	"i":["inverted pyramid" ,"#c99"]
 };
-
 
 //canvas handling for tooltip / mouseover box
 function show_tooltip(voicing_id) {
@@ -675,22 +695,34 @@ function show_tooltip(voicing_id) {
 	
 	ctx.clearRect(0, 0, width, height);
 	
-	//the voicing is drawn in a 1:1 box aligned left with dimentions height x height
-	ctx.clearRect(0, 0, height, height);
+	//<-------------- width ------------->
+	//<--- height --->
+	//+--------------+-------------------+  ^
+	//|              | (attributes)      |  |
+	//|              |                   |  |
+	//| (piano roll) |                   |  height
+	//|              |                   |  |
+	//|              |                   |  |
+	//|              | (details)         |  |
+	//+--------------+-------------------+  v
+
+	//the voicing is drawn in a 1:1 box aligned left with dimensions height x height
 	
 	//draw the voicing as piano roll
-	//vertical grid is smallest amount of octaves this voicing fits into, in notes
+	//vertical grid size is the smallest amount of octaves this voicing fits into, in notes
 	let [voicing_edo,voicing_notes] = id_to_voicing(voicing.id);
 	let least_octaves = voicing_edo * Math.ceil(voicing.w/voicing_edo);
 	
 	for (let i = 0; i <= least_octaves; i++) {
 		ctx.fillStyle = '#444';
+		//if drawing the box that corresponds to a note that is in the voicing, draw
+		//it in red instead of grey
 		if (voicing_notes.indexOf(i) != -1) ctx.fillStyle = '#f44';
 		ctx.fillRect(0, height - height/(least_octaves+1)*(i+1), height, height/(least_octaves+1)*0.9  );
 	}
 	
-	//draw lines where the fifth and octave are
-	//offset by -0.5 to draw in the middle of the note.
+	//draw lines where the fifth and octave are.
+	//offset it by -0.5 to draw in the middle of the note.
 	// 584/1000 = 702/1200 = 702 cents = a fifth
 	//draw these for every octave that could be visible
 	//label them on the right
@@ -717,13 +749,13 @@ function show_tooltip(voicing_id) {
 		ctx.fillText("da", height + 3, octave_y + 5);
 		
 	}
-	//box outline
+	//draw box outline (draw it over the piano roll boxes)
 	ctx.strokeStyle = '#666f';
 	ctx.strokeRect(0,0,height + 24.5,height);
 	ctx.strokeStyle = '#888f';
 	ctx.strokeRect(0,0,width,height);
 	
-	//draw attribute text on the right
+	//draw attribute text in the top right corner
 	if (voicing.a) {
 		ctx.fillStyle = '#eeea';
 		ctx.fillText("attributes:", height + 30, 15);
@@ -734,6 +766,7 @@ function show_tooltip(voicing_id) {
 		}
 	}
 	
+	//draw details text in bottom right corner
 	ctx.fillStyle = '#aaaa';
 	if (voicing.r12s_name) ctx.fillText(voicing.r12s_name, height + 30, height - 20);
 	ctx.fillText(voicing.id, height + 30, height - 5);

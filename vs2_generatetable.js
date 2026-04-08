@@ -511,8 +511,8 @@ for (let j of EDOS_TO_GENERATE) {
 		VOICING_TABLE_THIS_EDO[i].fi_notes = ( scale_degree_to_midi(VOICING_TABLE_THIS_EDO[i].fi,EDO) - NOTE_OFFSET );
 		
 		//"rounded 12edo set"
-		VOICING_TABLE_THIS_EDO[i].r12s = notes_to_reduced_set(voicing_midi.map( n => Math.round( n - NOTE_OFFSET ) ));
-		let r12s_name = find_name_of_reduced_set( VOICING_TABLE_THIS_EDO[i].r12s );
+		let r12s = notes_to_reduced_set(voicing_midi.map( n => Math.round( n - NOTE_OFFSET ) ));
+		let r12s_name = find_name_of_reduced_set( r12s );
 		
 		//only add to r12s name and confidence to database if exists.
 		//confidence: rounded all the notes and nothing changed: 100 confidence
