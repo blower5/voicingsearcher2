@@ -126,6 +126,10 @@ window.addEventListener('DOMContentLoaded', (event) => {
 	
 	document.getElementById("addfilter").addEventListener("click", add_filter);
 	document.getElementById("removefilter").addEventListener("click", remove_filter);
+	
+	for (let i of document.getElementsByClassName("collapsable")) {
+		i.addEventListener("click", toggle_collapsable);
+	}
 
 	//---------- DOM stuff ---------------------------------------------------------------------------------------------------
 	search_params = new URLSearchParams(window.location.search);
@@ -598,6 +602,22 @@ function create_page_selector(current_page){
 	return page_selector;
 }
 
+
+
+
+
+
+//collapsable tutorial text
+function toggle_collapsable() {
+	// let collapsable = this;
+	if ( this.children[1].hidden ) {
+		this.children[1].hidden = false;
+		this.children[0].children[0].textContent = "V";
+	} else {
+		this.children[1].hidden = true;
+		this.children[0].children[0].textContent = ">";
+	}
+}
 
 
 

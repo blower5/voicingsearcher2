@@ -11,7 +11,7 @@ const NOTE_OFFSET = 60; //don't play voicings at C-2, play them at C3
 const VOICING_BASS_INTERVAL_WIDTH = 1;
 
 var EDO = 12;
-var EDOS_TO_GENERATE = [7,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31];
+var EDOS_TO_GENERATE = [7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31];
 //var EDOS_TO_GENERATE = [12,19];
 
 var VOICING_MAX_WIDTH = 24;
@@ -146,7 +146,8 @@ function note_to_name(midinote,showoctave=true) {
 //this currently breaks when NOTE_OFFSET is changed!
 function name_to_note(solfege, is_interval) {
 	regex = /(d|ut|r|n|m|f|sh|s|fl|l|th|t)(u|o|a|e|i)(\d)?/;
-	regexmatches = solfege.match(regex);
+	
+	regexmatches = solfege.toLowerCase().match(regex);
 	//regexmatches[0] is the original string, [1] is the consonant, [2] is the vowel, and [3] is the octave if it exists
 	
 	notelist = ["d","ut","r","n","m","f","sh","s","fl","l","th","t"];
@@ -247,17 +248,17 @@ const Partials = {
 	//it doesn't matter because I have chosen tones with only 3 harmonics for the instruments
 	
 	// quick amplitude conversion
-	// .1   = -10dB (by definition)
-	// .125 =  -9dB
-	// .2   =  -7dB
-	// .25  =  -6dB
-	// .5   =  -3dB
-	// .633 =  -2dB
+	// .1    = -10dB (by definition)
+	// .125 ~=  -9dB
+	// .2   ~=  -7dB
+	// .25  ~=  -6dB
+	// .5   ~=  -3dB
+	// .633 ~=  -2dB
 	
-			SAW: [[1,1],[2,.5],[3,.333]],//,[4,.25],[5,.2]],[6,.167]];
-			SQUARE: [[1,1],[3,.5],[5,.333]],//,[7,.25],[9,.2]]//,[11,.167]]
-			FM3: [[1,1],[2,.125],[4,.125]],
-			FM4: [[1,1],[3,.125],[5,.125]],
+			SAW:    [[1,1],[2,.5],    [3,.333]],//,[4,.25],[5,.2]],[6,.167]];
+			SQUARE: [[1,1],[3,.5],    [5,.333]],//,[7,.25],[9,.2]]//,[11,.167]]
+			FM3:    [[1,1],[2,.125],  [4,.125]],
+			FM4:    [[1,1],[3,.125],  [5,.125]],
 			FMBELL: [[1,1],[2.4,.125],[4.375,.125]]  //using 12/5 and 35/8
 }
 
@@ -306,9 +307,10 @@ function calc_characteristic_interval(freqs,harms) {
 function calc_median_interval(freqs) {
 	freq_pairs = subsets(freqs,2,2);
 	intervals = freq_pairs.map( freq_interval_to_notes );
-	intervals.sort();
+	intervals.sort( (a,b)=>a-b );
 	return intervals[Math.floor(intervals.length/2)];
 }
+
 
 
 //from Vassilakis' Perceptual and Physical Properties of Amplitude Fluctuation (2001)
@@ -334,16 +336,21 @@ function voicing_to_id(voicing,edo=EDO) {
 
 // returns [edo,voicing]
 function id_to_voicing(id) {
-	id_parts = id.match( /(\d+)\.(\d+)/ );
-	edo = id_parts[1];
+	id_parts = id_split(id);
+	edo = id_parts[0];
 	
 	i = 0;
 	voicing = [0]
-	while ((id_parts[2] >> i) > 0) {
-		if (id_parts[2] >> i & 1) voicing.push(i+1);
+	while ((id_parts[1] >> i) > 0) {
+		if (id_parts[1] >> i & 1) voicing.push(i+1);
 		i++;
 	}
 	return [edo, voicing];
+}
+
+// for "a.bbbbb" returns [a,bbbbb]
+function id_split(id) {
+	return id.match( /(\d+)\.(\d+)/ ).splice(1,3);
 }
 
 function id_to_freqs(id) {
@@ -357,7 +364,8 @@ function array_is_equal(a, b) {
 	if (a == null || b == null) return false;
 	if (a.length !== b.length) return false;
 
-	let a2 = Array.from(a).sort() //don't mutate a and b!
+//don't mutate a and b! also it doesn't matter that it is sorting alphabetically here. which is what sort() does by default.
+	let a2 = Array.from(a).sort()
 	let b2 = Array.from(b).sort()
 
 	for (var i = 0; i < a2.length; ++i) {		
@@ -395,6 +403,8 @@ function voicing_delta_is_inv_pyramid( vd ) {
 }
 
 
+
+
 //set theory stuff, uses arrays of notes
 
 function remove_duplicates(A) {
@@ -430,9 +440,8 @@ function notes_to_reduced_set(voicing_notes) {
 	return A;
 }
 
-//returns [name, function]
 function find_name_of_reduced_set(reduced_set) {
-	return CHORD_NAMES[reduced_set.join("")] ?? ""; //defined in chordnames.js
+	return CHORD_NAMES[reduced_set.join("")] ?? "";
 }
 
 

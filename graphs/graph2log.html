@@ -1,0 +1,96 @@
+<html>
+	<head>
+		<script src="../vs2_math.js"></script>
+		<script src="./vs2_graph.js"></script>
+	</head>
+	<body style="background-color: #333;">
+		<canvas id="graph1" width="1200" height="900">
+		</canvas>
+		<script>
+			let graph1canvas = document.getElementById('graph1');
+			
+			let width = graph1canvas.clientWidth;
+			let height = graph1canvas.clientHeight;
+			
+			ctx = graph1canvas.getContext('2d');
+			
+			//background
+			ctx.clearRect(0, 0, width, height);
+			ctx.fillStyle = '#333';
+			ctx.fillRect(0, 0, width, height);
+			
+			//LOGARITHM base
+			let log_base = 5;
+			
+			
+			//what frequencies does this graph range?
+			let left_freq = 185;
+			let right_freq = 890;
+			
+			
+			
+			
+			
+			draw_labels_log();
+			
+			
+			
+			draw_title("Comparison of Roughness Curves, Log Scale", 110);
+			
+			draw_key( [["#f22","2-dissonance (n=3)"],["#2cf","3-dissonance (n=3)"],["#2f2","bell dissonance (n=3)"]], 10, 230, 270 );
+
+			ctx.fillStyle = '#eee';
+			ctx.font = "18px sans-serif";
+			ctx.fillText( "frequency in Hz →", width/2 - 60, height - 20 );
+			
+			
+			let x_resolution = 1200;
+			
+			let saw_partials = [[1,1], [2,.5], [3,.333], [4,.25], [5,.2], [6,.167]];
+			
+			ctx.beginPath();
+			ctx.lineWidth = 3;
+			ctx.strokeStyle = "#f22";
+			ctx.moveTo(-100, height);
+			
+			for (let i = 0; i < x_resolution; i++) {
+				let j = lin_uv_to_log(i/x_resolution);
+				ctx.lineTo(width * i/x_resolution, height - 100 - 800 * calc_dissonance([200, left_freq + (right_freq-left_freq) * j] , Partials.FM3)[0] );
+			}
+			ctx.stroke();
+			
+			
+			ctx.beginPath();
+			ctx.strokeStyle = "#2cf";
+			ctx.moveTo(-100, height);
+			
+			for (let i = 0; i < x_resolution; i++) {
+				let j = lin_uv_to_log(i/x_resolution);
+				ctx.lineTo(width * i/x_resolution, height - 100 - 800 * calc_dissonance([200, left_freq + (right_freq-left_freq) * j] , Partials.FM4)[0] );
+				//ctx.lineTo(width * i/x_resolution, height - 100 - 800 * calc_dissonance([200, left_freq + (right_freq-left_freq) * i/x_resolution] , saw_partials)[0] );
+			}
+			ctx.stroke();
+			
+			
+			ctx.beginPath();
+			ctx.strokeStyle = "#2f2";
+			ctx.moveTo(-100, height);
+			
+			for (let i = 0; i < x_resolution; i++) {
+				let j = lin_uv_to_log(i/x_resolution);
+				ctx.lineTo(width * i/x_resolution, height - 100 - 800 * calc_dissonance([200, left_freq + (right_freq-left_freq) * j] , Partials.FMBELL)[0] );
+			}
+			ctx.stroke();
+			
+			
+			ctx.rotate( -Math.PI / 2 );
+			ctx.fillStyle = '#333';
+			ctx.fillRect(-590, 0, 120, 30);
+			ctx.fillStyle = '#eee';
+			ctx.fillText( "roughness →", -580, 18 );
+			ctx.resetTransform();
+			
+			
+		</script>
+	</body>
+</html>

@@ -117,17 +117,17 @@ const Partials = {
 	//it doesn't matter because I have chosen tones with only 3 harmonics for the instruments
 	
 	// quick amplitude conversion
-	// .1   = -10dB (by definition)
-	// .125 =  -9dB
-	// .2   =  -7dB
-	// .25  =  -6dB
-	// .5   =  -3dB
-	// .633 =  -2dB
+	// .1    = -10dB (by definition)
+	// .125 ~=  -9dB
+	// .2   ~=  -7dB
+	// .25  ~=  -6dB
+	// .5   ~=  -3dB
+	// .633 ~=  -2dB
 	
-			SAW: [[1,1],[2,.5],[3,.333]],//,[4,.25],[5,.2]],[6,.167]];
-			SQUARE: [[1,1],[3,.5],[5,.333]],//,[7,.25],[9,.2]]//,[11,.167]]
-			FM3: [[1,1],[2,.125],[4,.125]],
-			FM4: [[1,1],[3,.125],[5,.125]],
+			SAW:    [[1,1],[2,.5],    [3,.333]],//,[4,.25],[5,.2]],[6,.167]];
+			SQUARE: [[1,1],[3,.5],    [5,.333]],//,[7,.25],[9,.2]]//,[11,.167]]
+			FM3:    [[1,1],[2,.125],  [4,.125]],
+			FM4:    [[1,1],[3,.125],  [5,.125]],
 			FMBELL: [[1,1],[2.4,.125],[4.375,.125]]  //using 12/5 and 35/8
 }
 
@@ -176,7 +176,7 @@ function calc_characteristic_interval(freqs,harms) {
 function calc_median_interval(freqs) {
 	freq_pairs = subsets(freqs,2,2);
 	intervals = freq_pairs.map( freq_interval_to_notes );
-	intervals.sort();
+	intervals.sort( (a,b)=>a-b );
 	return intervals[Math.floor(intervals.length/2)];
 }
 
@@ -233,7 +233,8 @@ function array_is_equal(a, b) {
 	if (a == null || b == null) return false;
 	if (a.length !== b.length) return false;
 
-	let a2 = Array.from(a).sort() //don't mutate a and b!
+//don't mutate a and b! also it doesn't matter that it is sorting alphabetically here. which is what sort() does by default.
+	let a2 = Array.from(a).sort()
 	let b2 = Array.from(b).sort()
 
 	for (var i = 0; i < a2.length; ++i) {		

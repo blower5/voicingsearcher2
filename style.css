@@ -4,6 +4,25 @@ body {
 	font-family: monospace;
 }
 
+.collapsable {
+	padding: 2px 4px;
+	border: 1px solid #888;
+	border-radius: 8px;
+	max-width: 500px;
+}
+
+.collapsable > span {
+	color: #e88;
+	&:hover {
+		color: #fff;
+	}
+}
+
+.collapsable > div {
+	margin: 10px;
+}
+
+
 #sort, .filterdiv, .add-remove-filter {
 	margin-bottom: 5px;
 }

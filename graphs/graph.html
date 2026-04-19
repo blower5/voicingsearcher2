@@ -1,0 +1,78 @@
+<html>
+	<head>
+		<script src="../vs2_math.js"></script>
+		<script src="./vs2_graph.js"></script>
+	</head>
+	<body style="background-color: #333;">
+		<canvas id="graph1" width="1200" height="900">
+		</canvas>
+		<script>
+			let graph1canvas = document.getElementById('graph1');
+			
+			let width = graph1canvas.clientWidth;
+			let height = graph1canvas.clientHeight;
+			
+			ctx = graph1canvas.getContext('2d');
+			
+			//background
+			ctx.clearRect(0, 0, width, height);
+			ctx.fillStyle = '#333';
+			ctx.fillRect(0, 0, width, height);
+			
+			
+			//what frequencies does this graph range?
+			let left_freq = 180;
+			let right_freq = 832;
+			
+
+			
+			draw_labels_linear();
+			
+		
+			
+			draw_title("Full vs. Cheap Roughness Curve, Linear Scale", 95);
+			
+			draw_key( [["#fff","Full (n=6)"],["#f22","Cheap (n=3)"]], 10, 230, 180 );
+			
+			ctx.fillStyle = '#eee';
+			ctx.font = "18px sans-serif";
+			ctx.fillText( "frequency in Hz →", width/2 - 60, height - 20 );
+			
+			
+			
+			let x_resolution = 1200;
+			
+			let saw_partials = [[1,1], [2,.5], [3,.333], [4,.25], [5,.2], [6,.167]];
+			//let saw_partials = [[1,1], [2,.5], [3,.333], [4,.25], [5,.2], [6,.167],[7,.143]];
+			
+			ctx.beginPath();
+			ctx.lineWidth = 3;
+			ctx.strokeStyle = "#fff";
+			ctx.moveTo(-100, height);
+			
+			for (let i = 0; i < x_resolution; i++) {
+				ctx.lineTo(width * i/x_resolution, height - 100 - 720 * calc_dissonance([200, left_freq + (right_freq-left_freq) * i/x_resolution] , saw_partials)[0] );
+			}
+			ctx.stroke();
+			
+			
+			ctx.beginPath();
+			ctx.strokeStyle = "#f22";
+			ctx.moveTo(-100, height);
+			
+			for (let i = 0; i < x_resolution; i++) {
+				ctx.lineTo(width * i/x_resolution, height - 100 - 800 * calc_dissonance([200, left_freq + (right_freq-left_freq) * i/x_resolution] , Partials.FM3)[0] );
+			}
+			ctx.stroke();
+			
+			
+			ctx.rotate( -Math.PI / 2 );
+			ctx.fillStyle = '#333';
+			ctx.fillRect(-590, 0, 120, 30);
+			ctx.fillStyle = '#eee';
+			ctx.fillText( "roughness →", -580, 18 );
+			ctx.resetTransform();
+			
+		</script>
+	</body>
+</html>
