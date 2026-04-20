@@ -11,10 +11,16 @@ const NOTE_OFFSET = 60; //don't play voicings at C-2, play them at C3
 const VOICING_BASS_INTERVAL_WIDTH = 1;
 
 var EDO = 12;
-var EDOS_TO_GENERATE = [7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31];
-//var EDOS_TO_GENERATE = [12,19];
+var EDOS_TO_GENERATE = [	5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31];
+//var EDOS_TO_GENERATE = [7,12];
 
+//maximum width of the voicings in *scale degrees*. 
+//the voicings will consist of every possible subset of this amount of notes.
 var VOICING_MAX_WIDTH = 24;
+//for lower edos, the above will generate very wide voicings. everything above this
+//threshold (in notes) will be cut.
+var VOICING_CUTOFF_THRESHOLD_NOTES = 31; //31 is 2 octaves + a fifth
+
 
 var VOICING_TABLE = []; //master array with all info
 
@@ -471,7 +477,9 @@ for (let i = 1; i < VOICING_MAX_WIDTH + 1; i++) {
 }
 
 console.log("generating voicing subsets...");
-
+// these voicing subsets are re used for every edo, e.g. one of the subsets might be "0 7 12"
+// which is a fifth and an octave in 12edo but an octave and a major sixth in 7edo
+// the problem is, regular sized voicings in 19edo then become insanely wide in 7edo.
 let allvoicings = subsets(notesset, VOICING_MIN_NOTES - 1, VOICING_MAX_NOTES - 1);
 
 for (let i in allvoicings) {
@@ -510,9 +518,16 @@ for (let j of EDOS_TO_GENERATE) {
 		let voicing_midi = allvoicings[i].map(x => scale_degree_to_midi(x,EDO));
 		//VOICING_TABLE_THIS_EDO[i].voicing_midi = voicing_midi;
 		
-		//width is equal to the highest note (since the lowest note is always 0)
+		//width is equal to the highest scale degree (since the lowest scale degree is always 0)
 		VOICING_TABLE_THIS_EDO[i].w = allvoicings[i].slice(-1)[0];
+		//once we calculate the width in notes, we know how big the chord is. if it's over the threshold
+		//stop doing calculations for this voicing and remove it from the table
 		VOICING_TABLE_THIS_EDO[i].w_notes = ( scale_degree_to_midi(VOICING_TABLE_THIS_EDO[i].w,EDO) - NOTE_OFFSET );
+		if (VOICING_TABLE_THIS_EDO[i].w_notes > VOICING_CUTOFF_THRESHOLD_NOTES) {
+			VOICING_TABLE_THIS_EDO[i] = null;
+			continue;
+		}
+		
 		VOICING_TABLE_THIS_EDO[i].w_notes_r = note_to_name( VOICING_TABLE_THIS_EDO[i].w_notes + 24, true );
 		
 		//first interval
@@ -560,7 +575,7 @@ for (let j of EDOS_TO_GENERATE) {
 		if (allvoicings[i].length > 2) {
 			let attributes = "";
 			
-			//voicing delta is distance between each note. this array is one less in length than the voicing.
+			//voicing delta is distance between each note, aka, its the intervals that make up the chord. this array is one less in length than the voicing.
 			let voicing_delta = [];
 			for (let j = 1; j<allvoicings[i].length; j++) {
 				voicing_delta.push(allvoicings[i][j] - allvoicings[i][j-1]);
@@ -593,7 +608,11 @@ for (let j of EDOS_TO_GENERATE) {
 		
 		
 	}
-	VOICING_TABLE = VOICING_TABLE.concat(VOICING_TABLE_THIS_EDO);
+	
+	//we need to cut out all of the voicings that passed the cutoff threshold.
+	//earlier they were turned into null, so when we add this edo's voicings
+	//to the master table we'll just filter them out.
+	VOICING_TABLE = VOICING_TABLE.concat( VOICING_TABLE_THIS_EDO.filter( x => x!=null ) );
 }
 
 fs.writeFileSync('table.js', "VOICING_TABLE = " + JSON.stringify(VOICING_TABLE));
